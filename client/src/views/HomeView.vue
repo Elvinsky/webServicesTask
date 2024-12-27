@@ -41,7 +41,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue'
 import axios from 'axios'
 
@@ -69,7 +69,7 @@ const setMessage = (msg, error = false) => {
 
 const signup = async () => {
   try {
-    const response = await axios.post(`${API_URL}/auth/signup`, signupForm)
+    await axios.post(`${API_URL}/auth/signup`, signupForm)
     setMessage('User registered successfully!')
   } catch (error) {
     setMessage(error.response.data.message, true)

@@ -1,0 +1,32 @@
+stages:
+  - lint
+  - test
+  - build
+
+lint_and_format:
+  stage: lint
+  script:
+    - cd client
+    - npm ci
+    - npm run lint
+    - npm run format
+  only:
+    - master
+
+test_server:
+  stage: test
+  script:
+    - cd server
+    - npm ci
+    - npm run test
+  only:
+    - master
+
+build_client:
+  stage: build
+  script:
+    - cd client
+    - npm ci
+    - npm run build-only
+  only:
+    - master
