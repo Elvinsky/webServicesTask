@@ -8,47 +8,43 @@ verifyToken = (req, res, next) => {
 
   if (!token) {
     return res.status(403).send({
-      message: "No token provided!",
+      message: "No token provided!"
     });
   }
 
-  jwt.verify(token, config.secret, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({
-        message: "Unauthorized!",
+  jwt.verify(token,
+    config.secret,
+    (err, decoded) => {
+      if (err) {
+        return res.status(401).send({
+          message: "Unauthorized!",
+        });
+      }
+      req.userId = decoded.id;
+      next();
+    });
+};
+
+isAdmin = (req, res, next) => {
+  User.findByPk(req.userId).then(user => {
+    user.getRoles().then(roles => {
+      for (let i = 0; i < roles.length; i++) {
+        if (roles[i].name === "admin") {
+          next();
+          return;
+        }
+      }
+
+      res.status(403).send({
+        message: "Require Admin Role!"
       });
-    }
-    req.userId = decoded.id;
-    req.userScopes = decoded.scopes;
-    next();
+      return;
+    });
   });
-};
-
-checkScope = (requiredScope) => {
-  return (req, res, next) => {
-    if (!req.userScopes || !req.userScopes.includes(requiredScope)) {
-      return res.status(403).send({
-        message: "Require " + requiredScope,
-      });
-    }
-    next();
-  };
-};
-
-checkScope = (requiredScope) => {
-  return (req, res, next) => {
-    if (!req.userScopes || !req.userScopes.includes(requiredScope)) {
-      return res.status(403).send({
-        message: "Require " + requiredScope,
-      });
-    }
-    next();
-  };
 };
 
 const authJwt = {
   verifyToken: verifyToken,
-  checkScope: checkScope,
+  isAdmin: isAdmin,
 };
-
 module.exports = authJwt;

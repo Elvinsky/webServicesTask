@@ -7,6 +7,11 @@ const Op = db.Sequelize.Op;
 
 let jwt = require("jsonwebtoken");
 let bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+
+const generateRefreshToken = () => {
+  return crypto.randomBytes(40).toString("hex");
+};
 
 exports.signup = (req, res) => {
   User.create({
@@ -44,12 +49,12 @@ exports.signin = (req, res) => {
       username: req.body.username,
     },
   })
-    .then((user) => {
+    .then(async (user) => {
       if (!user) {
         return res.status(404).send({ message: "User Not found." });
       }
 
-      var passwordIsValid = bcrypt.compareSync(
+      const passwordIsValid = bcrypt.compareSync(
         req.body.password,
         user.password
       );
@@ -61,31 +66,56 @@ exports.signin = (req, res) => {
         });
       }
 
-      const scopes = req.body.roles.map(
-        (role) => `sSCOPE_${role.name.toUpperCase()}`
-      );
-
-      const token = jwt.sign({ id: user.id, scopes: scopes }, config.secret, {
+      const accessToken = jwt.sign({ id: user.id }, config.secret, {
         algorithm: "HS256",
-        allowInsecureKeySizes: true,
         expiresIn: 3600, // 1 hour
       });
 
-      var authorities = [];
-      user.getRoles().then((roles) => {
-        for (let i = 0; i < roles.length; i++) {
-          authorities.push("ROLE_" + roles[i].name.toUpperCase());
-        }
-        res.status(200).send({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          roles: authorities,
-          accessToken: token,
-        });
+      const refreshToken = generateRefreshToken();
+      user.refreshToken = refreshToken; // Save in DB, update user model to include this field
+      await user.save();
+
+      const authorities = [];
+      const roles = await user.getRoles();
+      roles.forEach((role) => {
+        authorities.push("ROLE_" + role.name.toUpperCase());
+      });
+
+      res.status(200).send({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        roles: authorities,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
       });
     })
     .catch((err) => {
       res.status(500).send({ message: err.message });
     });
+};
+
+exports.refreshtoken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(403).send({ message: "Refresh Token is required!" });
+  }
+
+  const user = await User.findOne({
+    where: { refreshToken },
+  });
+
+  if (!user) {
+    return res.status(403).send({ message: "Refresh token is invalid!" });
+  }
+
+  const newAccessToken = jwt.sign({ id: user.id }, config.secret, {
+    algorithm: "HS256",
+    expiresIn: 3600, // 1 hour
+  });
+
+  res.status(200).send({
+    accessToken: newAccessToken,
+  });
 };
