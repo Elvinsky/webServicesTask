@@ -9,6 +9,18 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
+const { graphqlHTTP } = require("express-graphql");
+
+const schema = require("./schema");
+
+app.use(
+  "/graphql",
+  graphqlHTTP({
+    schema,
+    graphiql: true,
+  })
+);
+
 const db = require("./app/models");
 const Role = db.role;
 
