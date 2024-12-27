@@ -9,3 +9,11 @@ exports.userBoard = (req, res) => {
 exports.adminBoard = (req, res) => {
   res.status(200).send("Test Admin lab4.");
 };
+
+exports.readPerm = (req, res) => {
+  res.status(200).send("Reading is allowed");
+};
+
+exports.writePerm = (req, res) => {
+  res.status(200).send("Writing is allowed");
+};

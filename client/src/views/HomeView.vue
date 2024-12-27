@@ -31,6 +31,8 @@
       <button @click="refreshToken">Refresh Token</button>
       <button @click="testUserAccess">Test User Access</button>
       <button @click="testAdminAccess">Test Admin Access</button>
+      <button @click="testReadPermission">Test Read Permission</button>
+      <button @click="testWritePermission">Test Write Permission</button>
     </div>
 
     <div class="message" :class="{ error: isError }">
@@ -111,6 +113,27 @@ const testUserAccess = async () => {
 const testAdminAccess = async () => {
   try {
     const response = await axios.get(`${API_URL}/test/admin`, {
+      headers: { 'x-access-token': localStorage.getItem('accessToken') },
+    })
+    setMessage(response.data.message)
+  } catch (error) {
+    setMessage(error.response.data.message, true)
+  }
+}
+
+const testWritePermission = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/test/write`, {
+      headers: { 'x-access-token': localStorage.getItem('accessToken') },
+    })
+    setMessage(response.data.message)
+  } catch (error) {
+    setMessage(error.response.data.message, true)
+  }
+}
+const testReadPermission = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/test/read`, {
       headers: { 'x-access-token': localStorage.getItem('accessToken') },
     })
     setMessage(response.data.message)

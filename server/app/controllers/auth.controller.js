@@ -66,28 +66,36 @@ exports.signin = (req, res) => {
         });
       }
 
-      const accessToken = jwt.sign({ id: user.id }, config.secret, {
+      const roles = await user.getRoles();
+      const authorities = [];
+      let scope = [];
+
+      roles.forEach((role) => {
+        authorities.push("ROLE_" + role.name.toUpperCase());
+        if (role.name === "admin") {
+          scope.push("read", "write", "delete");
+        } else if (role.name === "user") {
+          scope.push("read");
+        }
+      });
+
+      const accessToken = jwt.sign({ id: user.id, scope }, config.secret, {
         algorithm: "HS256",
         expiresIn: 3600, // 1 hour
       });
 
       const refreshToken = generateRefreshToken();
-      user.refreshToken = refreshToken; // Save in DB, update user model to include this field
+      user.refreshToken = refreshToken;
       await user.save();
-
-      const authorities = [];
-      const roles = await user.getRoles();
-      roles.forEach((role) => {
-        authorities.push("ROLE_" + role.name.toUpperCase());
-      });
 
       res.status(200).send({
         id: user.id,
         username: user.username,
         email: user.email,
         roles: authorities,
-        accessToken: accessToken,
-        refreshToken: refreshToken,
+        scope,
+        accessToken,
+        refreshToken,
       });
     })
     .catch((err) => {
