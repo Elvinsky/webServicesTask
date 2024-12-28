@@ -1,35 +1,49 @@
-const { GraphQLSchema, GraphQLObjectType, GraphQLString } = require("graphql");
+const { gql } = require("apollo-server-express");
 
-const RootQuery = new GraphQLObjectType({
-  name: "RootQueryType",
-  fields: {
-    message: {
-      type: GraphQLString,
-      resolve() {
-        return "Hello, World!";
-      },
-    },
-  },
-});
+const typeDefs = gql`
+  type Option {
+    id: ID!
+    text: String!
+    votes: Int!
+  }
 
-const Mutation = new GraphQLObjectType({
-  name: "Mutation",
-  fields: {
-    createMessage: {
-      type: GraphQLString,
-      args: {
-        message: { type: GraphQLString },
-      },
-      resolve(parent, args) {
-        return args.message;
-      },
-    },
-  },
-});
+  type Question {
+    id: ID!
+    text: String!
+    options: [Option!]!
+  }
 
-const schema = new GraphQLSchema({
-  query: RootQuery,
-  mutation: Mutation,
-});
+  type Questionnaire {
+    id: ID!
+    title: String!
+    questions: [Question!]!
+  }
 
-module.exports = schema;
+  type Query {
+    getQuestionnaires: [Questionnaire!]!
+    getQuestionnaire(id: ID!): Questionnaire
+  }
+
+  type Mutation {
+    createQuestionnaire(
+      title: String!
+      questions: [QuestionInput!]!
+    ): Questionnaire!
+    vote(questionId: ID!, optionId: ID!): Option!
+  }
+
+  type Subscription {
+    questionnaireUpdated: Questionnaire
+  }
+
+  input QuestionInput {
+    text: String!
+    options: [OptionInput!]!
+  }
+
+  input OptionInput {
+    text: String!
+  }
+`;
+
+module.exports = typeDefs;
