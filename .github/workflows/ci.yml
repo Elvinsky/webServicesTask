@@ -54,7 +54,7 @@ jobs:
         npm ci
         npm run build-only
         cd ..
-  build:
+  build-2:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
